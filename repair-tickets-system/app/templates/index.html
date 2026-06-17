@@ -1,0 +1,60 @@
+{% extends "base.html" %}
+
+{% block title %}Главная{% endblock %}
+
+{% block content %}
+<div class="text-center py-5">
+    <h1 class="display-4">Система учёта ремонтных заявок</h1>
+    <p class="lead">Эффективное управление задачами и заявками организации</p>
+    
+    {% if not current_user.is_authenticated %}
+        <div class="mt-4">
+            <a href="{{ url_for('auth.login') }}" class="btn btn-primary btn-lg mx-2">
+                <i class="fas fa-sign-in-alt"></i> Войти
+            </a>
+            <a href="{{ url_for('auth.register') }}" class="btn btn-success btn-lg mx-2">
+                <i class="fas fa-user-plus"></i> Зарегистрироваться
+            </a>
+        </div>
+    {% else %}
+        <div class="mt-4">
+            <a href="{{ url_for('tickets.list_tickets') }}" class="btn btn-primary btn-lg">
+                <i class="fas fa-list"></i> Перейти к заявкам
+            </a>
+            <a href="{{ url_for('tickets.create_ticket') }}" class="btn btn-success btn-lg">
+                <i class="fas fa-plus"></i> Создать заявку
+            </a>
+        </div>
+    {% endif %}
+</div>
+
+<div class="row mt-5">
+    <div class="col-md-4">
+        <div class="card text-center">
+            <div class="card-body">
+                <i class="fas fa-tasks fa-3x text-primary"></i>
+                <h5 class="card-title mt-3">Создавайте заявки</h5>
+                <p class="card-text">Описывайте проблемы и отслеживайте их выполнение</p>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="card text-center">
+            <div class="card-body">
+                <i class="fas fa-users fa-3x text-success"></i>
+                <h5 class="card-title mt-3">Назначайте исполнителей</h5>
+                <p class="card-text">Ответственные лица распределяют задачи</p>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="card text-center">
+            <div class="card-body">
+                <i class="fas fa-chart-line fa-3x text-info"></i>
+                <h5 class="card-title mt-3">Контролируйте выполнение</h5>
+                <p class="card-text">Отслеживайте статусы и историю изменений</p>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

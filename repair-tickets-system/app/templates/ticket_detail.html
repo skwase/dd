@@ -1,0 +1,300 @@
+{% extends "base.html" %}
+
+{% block title %}Заявка #{{ ticket.id }}{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div id="ticket-detail-root" class="col-lg-8">
+        <!-- Основная информация -->
+        <div class="card shadow mb-4">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h4 class="mb-0">Заявка #{{ ticket.id }}: {{ ticket.title }}</h4>
+                <span class="badge status-{{ ticket.status.replace('_', '') }} fs-6">
+                    {% if ticket.status == 'new' %}Новая
+                    {% elif ticket.status == 'in_progress' %}В работе
+                    {% elif ticket.status == 'completed' %}Выполнена
+                    {% else %}Отменена{% endif %}
+                </span>
+            </div>
+            <div class="card-body">
+                <div class="mb-4">
+                    <h6><i class="fas fa-align-left"></i> Описание:</h6>
+                    <p class="text-muted">{{ ticket.description or 'Описание отсутствует' }}</p>
+                </div>
+                
+                <div class="row">
+                    <div class="col-md-6">
+                        <div class="mb-2">
+                            <strong><i class="fas fa-user"></i> Автор:</strong>
+                            <span>{{ ticket.author.full_name or ticket.author.username }}</span>
+                        </div>
+                        <div class="mb-2">
+                            <strong><i class="fas fa-user-cog"></i> Исполнитель:</strong>
+                            <span>{{ ticket.assignee.full_name or ticket.assignee.username if ticket.assignee else 'Не назначен' }}</span>
+                        </div>
+                        <div class="mb-2">
+                            <strong><i class="fas fa-tag"></i> Категория:</strong>
+                            <span>{{ ticket.category.name if ticket.category else 'Без категории' }}</span>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="mb-2">
+                            <strong><i class="fas fa-flag"></i> Приоритет:</strong>
+                            <span class="priority-{{ ticket.priority }}">
+                                {% if ticket.priority == 'low' %}Низкий
+                                {% elif ticket.priority == 'medium' %}Средний
+                                {% elif ticket.priority == 'high' %}Высокий
+                                {% else %}Критичный{% endif %}
+                            </span>
+                        </div>
+                        <div class="mb-2">
+                            <strong><i class="fas fa-calendar-plus"></i> Создана:</strong>
+                            <span>{{ ticket.created_at.strftime('%d.%m.%Y %H:%M') }}</span>
+                        </div>
+                        <div class="mb-2">
+                            <strong><i class="fas fa-calendar-edit"></i> Обновлена:</strong>
+                            <span>{{ ticket.updated_at.strftime('%d.%m.%Y %H:%M') }}</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- История изменений -->
+        <div class="card shadow mb-4">
+            <div class="card-header bg-info text-white">
+                <h5 class="mb-0"><i class="fas fa-history"></i> История изменений</h5>
+            </div>
+            <div class="card-body">
+                {% if ticket.history %}
+                    <div class="timeline">
+                        {% for event in ticket.history|sort(attribute='change_date', reverse=True) %}
+                        <div class="mb-3 pb-2 border-bottom">
+                            <div class="d-flex justify-content-between">
+                                <strong>
+                                    {% if event.field_name == 'status' %}Изменился статус
+                                    {% elif event.field_name == 'assignee' %}Назначен исполнитель
+                                    {% elif event.field_name == 'category' %}Изменена категория
+                                    {% elif event.field_name == 'priority' %}Изменён приоритет
+                                    {% else %}{{ event.field_name }}{% endif %}
+                                </strong>
+                                <small class="text-muted">{{ event.change_date.strftime('%d.%m.%Y %H:%M') }}</small>
+                            </div>
+                            <div class="small">
+                                {% if event.old_value %}
+                                    Было: <span class="text-muted">{{ event.old_value }}</span> → 
+                                {% endif %}
+                                Стало: <span class="text-primary">{{ event.new_value }}</span>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                {% else %}
+                    <p class="text-muted">История изменений пуста</p>
+                {% endif %}
+            </div>
+        </div>
+        
+        <!-- Комментарии -->
+        <div class="card shadow">
+            <div class="card-header bg-secondary text-white">
+                <h5 class="mb-0"><i class="fas fa-comments"></i> Комментарии ({{ ticket.comments|length }})</h5>
+            </div>
+            <div class="card-body">
+                {% for comment in ticket.comments|sort(attribute='created_at') %}
+                <div class="mb-3 pb-2 border-bottom">
+                    <div class="d-flex justify-content-between">
+                        <strong>{{ comment.user.full_name or comment.user.username }}</strong>
+                        <small class="text-muted">{{ comment.created_at.strftime('%d.%m.%Y %H:%M') }}</small>
+                    </div>
+                    <p class="mb-0 mt-1">{{ comment.content }}</p>
+                </div>
+                {% endfor %}
+                
+                <!-- Форма добавления комментария -->
+                <form method="POST" action="{{ url_for('tickets.edit_ticket_ajax', ticket_id=ticket.id) }}" class="mt-3 ajax-ticket-form">
+                    <input type="hidden" name="action" value="add_comment">
+                    <div class="mb-2">
+                        <label class="form-label">Добавить комментарий</label>
+                        <textarea class="form-control" name="comment" rows="2" required></textarea>
+                    </div>
+                    <button type="submit" class="btn btn-primary">
+                        <i class="fas fa-paper-plane"></i> Отправить
+                    </button>
+                </form>
+
+                {% if current_user.is_responsible() %}
+                <hr>
+                <form method="POST" action="{{ url_for('tickets.edit_ticket_ajax', ticket_id=ticket.id) }}" class="ajax-ticket-form" data-confirm="Удалить заявку?">
+                    <input type="hidden" name="action" value="delete_ticket">
+                    <button type="submit" class="btn btn-danger w-100">
+                        <i class="fas fa-trash"></i> Удалить заявку
+                    </button>
+                </form>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+    
+    <!-- Боковая панель управления (только для ответственных) -->
+    <div class="col-lg-4">
+        {% if current_user.is_responsible() %}
+        <div class="card shadow mb-4">
+            <div class="card-header bg-warning">
+                <h5 class="mb-0"><i class="fas fa-tools"></i> Управление заявкой</h5>
+            </div>
+            <div class="card-body">
+                <!-- Смена статуса -->
+                <form method="POST" action="{{ url_for('tickets.edit_ticket_ajax', ticket_id=ticket.id) }}" class="mb-3 ajax-ticket-form">
+                    <input type="hidden" name="action" value="change_status">
+                    <label class="form-label">Изменить статус</label>
+                    <select name="status" class="form-select mb-2">
+                        <option value="new" {% if ticket.status == 'new' %}selected{% endif %}>Новая</option>
+                        <option value="in_progress" {% if ticket.status == 'in_progress' %}selected{% endif %}>В работе</option>
+                        <option value="completed" {% if ticket.status == 'completed' %}selected{% endif %}>Выполнена</option>
+                        <option value="canceled" {% if ticket.status == 'canceled' %}selected{% endif %}>Отменена</option>
+                    </select>
+                    <button type="submit" class="btn btn-sm btn-warning w-100">Обновить статус</button>
+                </form>
+                
+                <!-- Назначение исполнителя -->
+                <form method="POST" action="{{ url_for('tickets.edit_ticket_ajax', ticket_id=ticket.id) }}" class="mb-3 ajax-ticket-form">
+                    <input type="hidden" name="action" value="assign_executor">
+                    <label class="form-label">Назначить исполнителя</label>
+                    <select name="assignee_id" class="form-select mb-2">
+                        <option value="">Не назначен</option>
+                        {% for user in responsible_users %}
+                        <option value="{{ user.id }}" {% if ticket.assignee_id == user.id %}selected{% endif %}>
+                            {{ user.full_name or user.username }} ({{ user.role }})
+                        </option>
+                        {% endfor %}
+                    </select>
+                    <button type="submit" class="btn btn-sm btn-info w-100">Назначить</button>
+                </form>
+                
+                <!-- Смена категории -->
+                <form method="POST" action="{{ url_for('tickets.edit_ticket_ajax', ticket_id=ticket.id) }}" class="mb-3 ajax-ticket-form">
+                    <input type="hidden" name="action" value="change_category">
+                    <label class="form-label">Категория</label>
+                    <select name="category_id" class="form-select mb-2">
+                        <option value="">Без категории</option>
+                        {% for cat in categories %}
+                        <option value="{{ cat.id }}" {% if ticket.category_id == cat.id %}selected{% endif %}>
+                            {{ cat.name }}
+                        </option>
+                        {% endfor %}
+                    </select>
+                    <button type="submit" class="btn btn-sm btn-secondary w-100">Изменить категорию</button>
+                </form>
+                
+                <!-- Смена приоритета -->
+                <form method="POST" action="{{ url_for('tickets.edit_ticket_ajax', ticket_id=ticket.id) }}" class="ajax-ticket-form">
+                    <input type="hidden" name="action" value="change_priority">
+                    <label class="form-label">Приоритет</label>
+                    <select name="priority" class="form-select mb-2">
+                        <option value="low" {% if ticket.priority == 'low' %}selected{% endif %}>Низкий</option>
+                        <option value="medium" {% if ticket.priority == 'medium' %}selected{% endif %}>Средний</option>
+                        <option value="high" {% if ticket.priority == 'high' %}selected{% endif %}>Высокий</option>
+                        <option value="critical" {% if ticket.priority == 'critical' %}selected{% endif %}>Критичный</option>
+                    </select>
+                    <button type="submit" class="btn btn-sm btn-danger w-100">Изменить приоритет</button>
+                </form>
+            </div>
+        </div>
+        {% endif %}
+        
+        <!-- Статистика заявки -->
+        <div class="card shadow">
+            <div class="card-header bg-success text-white">
+                <h5 class="mb-0"><i class="fas fa-chart-bar"></i> Статистика</h5>
+            </div>
+            <div class="card-body">
+                <div class="text-center">
+                    <div class="display-4">{{ ticket.comments|length }}</div>
+                    <small class="text-muted">всего комментариев</small>
+                </div>
+                <hr>
+                <div class="small text-muted">
+                    <div>Время с момента создания: 
+                        {% set delta = (now or ticket.updated_at) - ticket.created_at %}
+                        {% set days = delta.days %}
+                        {% set hours = delta.seconds // 3600 %}
+                        {% if days > 0 %}{{ days }} д. {% endif %}{{ hours }} ч.
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block styles %}
+<style>
+.status-new { background-color: #2196f3; color: white; padding: 4px 12px; border-radius: 20px; }
+.status-inprogress { background-color: #ff9800; color: white; }
+.status-completed { background-color: #4caf50; color: white; }
+.status-canceled { background-color: #f44336; color: white; }
+.priority-low { color: #4caf50; }
+.priority-medium { color: #2196f3; }
+.priority-high { color: #ff9800; font-weight: bold; }
+.priority-critical { color: #f44336; font-weight: bold; }
+.timeline {
+    max-height: 300px;
+    overflow-y: auto;
+}
+</style>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+        const root = document.getElementById('ticket-detail-root');
+        const forms = document.querySelectorAll('form.ajax-ticket-form');
+
+        async function submitAjaxTicketForm(form) {
+            const confirmText = form.getAttribute('data-confirm');
+            if (confirmText && !window.confirm(confirmText)) return;
+
+            const actionUrl = form.getAttribute('action');
+            const formData = new FormData(form);
+
+            const res = await fetch(actionUrl, {
+                method: 'POST',
+                body: formData
+            });
+
+            const data = await res.json();
+
+            if (!res.ok || !data.ok) {
+                alert(data.message || 'Ошибка');
+                return;
+            }
+
+            if (data.redirect) {
+                window.location.href = data.redirect;
+                return;
+            }
+
+            if (root && data.updated_html) {
+                const tmp = document.createElement('div');
+                tmp.innerHTML = data.updated_html;
+                const newRoot = tmp.querySelector('#ticket-detail-root');
+                if (newRoot) root.replaceWith(newRoot);
+                else window.location.reload();
+            } else {
+                window.location.reload();
+            }
+        }
+
+        // Важно: слушатели вешаем только один раз на текущие формы.
+        forms.forEach((form) => {
+            if (form.dataset.ajaxBound === '1') return;
+            form.dataset.ajaxBound = '1';
+            form.addEventListener('submit', (e) => {
+                e.preventDefault();
+                submitAjaxTicketForm(form);
+            });
+        });
+    });
+</script>
+{% endblock %}

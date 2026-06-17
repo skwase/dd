@@ -1,0 +1,41 @@
+{% extends 'base.html' %}
+{% block title %}Tickets{% endblock %}
+{% block content %}
+  <div class="card">
+    <div style="display:flex; justify-content:space-between; align-items:center; gap: 16px;">
+      <h2 style="margin:0;">Tickets</h2>
+      <a href="{{ url_for('tickets.create_ticket') }}" style="text-decoration:none;"><button type="button">+ New ticket</button></a>
+    </div>
+
+    <form method="get" style="margin-top:16px;">
+      <label>Status filter</label>
+      <select name="status" onchange="this.form.submit()">
+        {% for s in ['','open','in_progress','closed'] %}
+          {% if s == status %}
+            <option value="{{ s }}" selected>{{ s or 'all' }}</option>
+          {% else %}
+            <option value="{{ s }}">{{ s or 'all' }}</option>
+          {% endif %}
+        {% endfor %}
+      </select>
+    </form>
+
+    <div style="margin-top:16px;">
+      {% if tickets %}
+        {% for t in tickets %}
+          <div class="card" style="box-shadow:none; border:1px solid #e5e7eb;">
+            <h3 style="margin-top:0;">
+<a href="{{ url_for('tickets.view_ticket', ticket_id=t.id) }}">{{ t.title }}</a>
+            </h3>
+            <div>Status: <b>{{ t.status }}</b></div>
+            <div>Author: {{ t.author.username }}</div>
+            <div>Created: {{ t.created_at }}</div>
+          </div>
+        {% endfor %}
+      {% else %}
+        <p>No tickets found.</p>
+      {% endif %}
+    </div>
+  </div>
+{% endblock %}
+

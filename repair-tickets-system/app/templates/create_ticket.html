@@ -1,0 +1,63 @@
+{% extends "base.html" %}
+
+{% block title %}Создание заявки{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-8">
+        <div class="card shadow">
+            <div class="card-header bg-success text-white">
+                <h4 class="mb-0"><i class="fas fa-plus-circle"></i> Новая заявка на ремонт</h4>
+            </div>
+            <div class="card-body">
+                <form method="POST">
+                    <div class="mb-3">
+                        <label for="title" class="form-label">Название заявки *</label>
+                        <input type="text" class="form-control" id="title" name="title" required 
+                               placeholder="Например: Не работает розетка в кабинете 12">
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="description" class="form-label">Описание проблемы</label>
+                        <textarea class="form-control" id="description" name="description" rows="4" 
+                                  placeholder="Подробно опишите проблему, место, время возникновения..."></textarea>
+                    </div>
+                    
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label for="category_id" class="form-label">Категория</label>
+                            <select class="form-select" id="category_id" name="category_id">
+                                <option value="">Выберите категорию</option>
+                                {% for cat in categories %}
+                                <option value="{{ cat.id }}">{{ cat.name }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        
+                        <div class="col-md-6 mb-3">
+                            <label for="priority" class="form-label">Приоритет</label>
+                            <select class="form-select" id="priority" name="priority">
+                                <option value="low">Низкий</option>
+                                <option value="medium" selected>Средний</option>
+                                <option value="high">Высокий</option>
+                                <option value="critical">Критичный</option>
+                            </select>
+                        </div>
+                    </div>
+                    
+                    <div class="alert alert-info">
+                        <i class="fas fa-info-circle"></i> После создания заявки вы сможете отслеживать её статус и получать комментарии от исполнителей.
+                    </div>
+                    
+                    <button type="submit" class="btn btn-success">
+                        <i class="fas fa-paper-plane"></i> Создать заявку
+                    </button>
+                    <a href="{{ url_for('tickets.list_tickets') }}" class="btn btn-secondary">
+                        <i class="fas fa-times"></i> Отмена
+                    </a>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
