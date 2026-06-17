@@ -23,9 +23,7 @@ CI/CD: GitHub Actions
 Deployment: Render.com
 🚀 Быстрый старт
 Локальный запуск
-# Клонирование репозитория
-git clone https://github.com/your-username/repair-tickets-system.git
-cd repair-tickets-system
+
 
 # Создание виртуального окружения
 python -m venv venv
