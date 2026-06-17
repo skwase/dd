@@ -9,4 +9,6 @@ COPY . .
 
 EXPOSE 5000
 
-CMD ["python", "run.py"]
+ENV PYTHONUNBUFFERED=1
+CMD ["gunicorn", "run:app", "-b", "0.0.0.0:5000", "--workers", "2"]
+

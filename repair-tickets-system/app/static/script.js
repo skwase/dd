@@ -38,13 +38,19 @@ function debounceSearch(input) {
 
 // Инициализация при загрузке
 document.addEventListener('DOMContentLoaded', function() {
-    // Добавляем классы для анимации
+    // Добавляем классы для анимации (только если это реально нужно)
     const cards = document.querySelectorAll('.card');
     cards.forEach((card, index) => {
         card.style.animationDelay = `${index * 0.05}s`;
     });
-    
-    // Авто-фокус на первое поле ввода
+
+    // Важно: НЕ делаем autofocus на каждую AJAX-перерисовку,
+    // иначе после отправки комментария страница может «ломаться» UX.
+    // Авто-фокус оставляем только на странице создания/редактирования,
+    // где реально есть форма ввода.
+    const formRoot = document.querySelector('.ajax-ticket-form');
+    if (formRoot) return;
+
     const firstInput = document.querySelector('input:not([type=hidden]), textarea');
     if (firstInput && !firstInput.value) {
         firstInput.focus();

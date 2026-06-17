@@ -249,7 +249,7 @@
 <script>
     document.addEventListener('DOMContentLoaded', function () {
         const root = document.getElementById('ticket-detail-root');
-        const forms = document.querySelectorAll('form.ajax-ticket-form');
+        let forms = document.querySelectorAll('form.ajax-ticket-form');
 
         async function submitAjaxTicketForm(form) {
             const confirmText = form.getAttribute('data-confirm');
@@ -279,22 +279,34 @@
                 const tmp = document.createElement('div');
                 tmp.innerHTML = data.updated_html;
                 const newRoot = tmp.querySelector('#ticket-detail-root');
-                if (newRoot) root.replaceWith(newRoot);
-                else window.location.reload();
+                if (newRoot) {
+                    root.replaceWith(newRoot);
+
+                    // после replace обязательно снова повесить обработчики на новые формы
+                    forms = document.querySelectorAll('form.ajax-ticket-form');
+                    bindAjaxHandlers(forms);
+                } else {
+                    window.location.reload();
+                }
             } else {
                 window.location.reload();
             }
         }
 
-        // Важно: слушатели вешаем только один раз на текущие формы.
-        forms.forEach((form) => {
-            if (form.dataset.ajaxBound === '1') return;
-            form.dataset.ajaxBound = '1';
-            form.addEventListener('submit', (e) => {
-                e.preventDefault();
-                submitAjaxTicketForm(form);
+        function bindAjaxHandlers(formsToBind) {
+            formsToBind.forEach((form) => {
+                if (form.dataset.ajaxBound === '1') return;
+                form.dataset.ajaxBound = '1';
+                form.addEventListener('submit', (e) => {
+                    e.preventDefault();
+                    submitAjaxTicketForm(form);
+                });
             });
-        });
+        }
+
+        // Важно: слушатели вешаем только один раз на текущие формы
+        bindAjaxHandlers(forms);
     });
 </script>
 {% endblock %}
+
